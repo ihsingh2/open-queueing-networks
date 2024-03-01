@@ -1,0 +1,102 @@
+\documentclass[10pt,notes]{beamer}
+\usecolortheme{whale}
+\useinnertheme{rounded}
+\useoutertheme{infolines}
+
+\linespread{1.25}\selectfont
+\beamertemplatenavigationsymbolsempty
+\setbeamerfont{note title}{size=\tiny}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{itemize item}[triangle]
+\setbeamertemplate{itemize subitem}[circle]
+\setbeamertemplate{itemize subsubitem}[square]
+
+\setbeamertemplate{headline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.5ex,right,rightskip=1em]{section in head/foot}%
+    \usebeamerfont{subsection in head/foot}\hspace*{2ex}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.5ex,left,leftskip=1em]{subsection in head/foot}%
+    \usebeamerfont{section in head/foot}\insertsectionhead\hspace*{2ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\makeatletter
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.925\paperwidth,ht=2.5ex,dp=1ex,center]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.075\paperwidth,ht=2.5ex,dp=1ex,right]{date in head/foot}%
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex} 
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatother
+
+\makeatletter
+\defbeamertemplate*{note page}{infolines}
+{%
+  {%
+    \usebeamerfont{note title}\usebeamercolor[fg]{note title}%
+    \ifbeamercolorempty[bg]{note title}{}{%
+      \insertvrule{.0325\paperheight}{note title.bg}%
+      \vskip-.0325\paperheight%
+      \nointerlineskip%
+    }%
+    \nointerlineskip
+    \leavevmode
+    \vbox to .0325\paperheight{\vfil
+        \begin{minipage}[t]{.5\linewidth}%
+            \hfill\insertshorttitle\hspace*{2ex}
+        \end{minipage}%
+        \begin{minipage}[t]{.5\linewidth}%
+            \hspace*{2ex}\insertsectionhead\hfill
+        \end{minipage}%
+    \vfil}%
+  }%
+  
+  \ifbeamercolorempty[bg]{note page}{}{%
+    \nointerlineskip%
+    \insertvrule{.965\paperheight}{note page.bg}%
+    \vskip-.965\paperheight%
+  }%
+  \vskip.25em
+  \nointerlineskip
+  \insertnote
+}
+\makeatother
+\setbeamertemplate{note page}[infolines]
+
+\title{Open Queueing Networks}
+\author{Himanshu Singh \and Vikaskumar Kalsariya \and Aditya Kulkarni \and Kiran Gullapalli \and Keshava V}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}
+    \tableofcontents
+\end{frame}
+
+\section{Section 1}
+
+\begin{frame}
+    \begin{itemize}
+        \item Item 1
+    \end{itemize}
+\end{frame}
+
+\note{
+    Note 1
+}
+
+\end{document}
