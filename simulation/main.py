@@ -71,7 +71,6 @@ class Server:
         else:
             logging.debug('%.2f %d: Queued an external arrival', self.timestamp, self.name)
             self.queue.append(0)
-            self.is_busy = True
             self.next_arrival = np.random.exponential(1 / self.external_arrival_rate)
 
     def service_current_job(self, time_delta):
@@ -87,18 +86,6 @@ class Server:
                 self.service_remaining = 0
                 self.is_busy = False
                 self.route_job()
-
-    def draw_job(self):
-        """
-        Draws a job from the queue, assuming the server is idle.
-        """
-
-        if self.queue:
-            logging.debug('%.2f %d: Started servicing a job', self.timestamp, self.name)
-            self.queue.pop(0)
-            self.service_remaining = np.random.exponential(1 / self.service_rate)
-            self.is_busy = True
-        self.is_busy = False
 
     def route_job(self):
         """
@@ -117,10 +104,20 @@ class Server:
         if cdf <= cdf_i:
             logging.debug('%.2f %d: Routed job to self', self.timestamp, self.name)
             self.queue.append(0)
-            self.is_busy = True
             return
 
         logging.debug('%.2f %d: Job left the system', self.timestamp, self.name)
+
+    def draw_job(self):
+        """
+        Draws a job from the queue, assuming the server is idle.
+        """
+
+        if self.queue:
+            logging.debug('%.2f %d: Started servicing a job', self.timestamp, self.name)
+            self.queue.pop(0)
+            self.service_remaining = np.random.exponential(1 / self.service_rate)
+            self.is_busy = True
 
 class Network:
     """
@@ -198,11 +195,11 @@ logging.basicConfig(format='%(message)s', level=logging.DEBUG)
 R = [1, 1, 1, 1]
 S = [1.25, 1.25, 1.25, 1.25]
 P = [
-    [0.21, 0.22, 0.23, 0.24],
-    [0.8, 0.05, 0.04, 0.03],
-    [0.9, 0.03, 0.04, 0.02],
-    [0.85, 0.02, 0.03, 0.01],
+    [0.05, 0.01, 0.03, 0.04],
+    [0.04, 0.03, 0.04, 0.03],
+    [0.01, 0.01, 0.04, 0.02],
+    [0.02, 0.01, 0.03, 0.01],
 ]
 
 N = Network(R, S, P)
-N.simulate(50, 0.01)
+N.simulate(500, 0.5)
