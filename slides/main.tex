@@ -1,9 +1,11 @@
 \documentclass[10pt,notes]{beamer}
+\usepackage{tcolorbox}
+
 \usecolortheme{whale}
 \useinnertheme{rounded}
 \useoutertheme{infolines}
 
-\linespread{1.25}\selectfont
+\linespread{1.4}\selectfont
 \beamertemplatenavigationsymbolsempty
 \setbeamerfont{note title}{size=\tiny}
 \setbeamertemplate{footline}[frame number]
@@ -22,6 +24,13 @@
     \usebeamerfont{section in head/foot}\insertsectionhead\hspace*{2ex}
   \end{beamercolorbox}}%
   \vskip0pt%
+}
+
+\setbeamertemplate{frametitle}{%
+    \nointerlineskip%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=3.0ex,dp=1.6ex]{frametitle}
+        \hspace*{1.5ex}\insertframetitle%
+    \end{beamercolorbox}%
 }
 
 \makeatletter
@@ -74,8 +83,8 @@
 \setbeamertemplate{note page}[infolines]
 
 \title{Open Queueing Networks}
-\author{Gustavo Fring \and Vikaskumar Kalsariya \and Aditya Kulkarni \and Kiran Gullapalli \and Keshava V}
-\date{\today}
+\author{Himanshu Singh \and Vikaskumar Kalsariya \and Aditya Kulkarni \and Kiran Gullapalli \and Keshava V}
+\date{March 2, 2024}
 
 \begin{document}
 
@@ -87,50 +96,52 @@
     \tableofcontents
 \end{frame}
 
-\section{Queueing Networks}
+\section{Introduction}
 
 \begin{frame}
     \frametitle{Queueing Networks}
     \begin{itemize}
-        \item A queueing network is made up of servers.
-        \item Open Networks: An open queueing network has external arrivals and departures.
+        \item A queueing network is a connected directed graph, whose nodes represent servers (each with their own queue), and edges between nodes represent channels through which jobs can be routed.
     \end{itemize}
     \begin{figure}
-        \includegraphics[width=0.65\linewidth]{images/open_network.jpg}
+        \includegraphics[width=0.6\linewidth]{images/ivy_bridge.png}
+        \caption{Intel Ivy Bridge queue model}
+    \end{figure}
+\end{frame}
+    
+\begin{frame}
+    \frametitle{Open Networks}
+    \begin{itemize}
+        \item A network is said to be open if there is at least one edge for an `external' arrival, and from every node there is a path for an `external' departure.
+    \end{itemize}
+    \begin{figure}
+        \includegraphics[width=0.55\linewidth]{images/open_network.png}
         \caption{An open queueing network}
     \end{figure}
 \end{frame}
 
-% \note{
-%     Note 1
-% }
-
-\section{Jackson Network}
-
 \begin{frame}
     \frametitle{Jackson Network}
     \begin{itemize}
-        \item General form of queueing network
-        \begin{itemize}
-            \item Unbounded queues
-            \item FCFS (First Come First Serve) service
-            \item Arrivals from outside network \(\sim\) Poisson(\(r_i\))
-            \item Service rates \(\sim\) exp(\(\mu_i\))
-            \item Probabilistic routing - \(P_{ij}\)
-            \item States: \((n_1, n_2, \ldots, n_k)\)
-            $$ \lambda_i = r_i + \sum_j \lambda_j P_{ji} \quad \text{.} $$
-        
-        \end{itemize}
+        \item A general form of open network
+            \begin{itemize}
+                \item Unbounded queues, with FCFS service order
+                \item External arrivals \(\sim\) Poisson(\(r_i\))
+                \item Service rates \(\sim\) Exp(\(\mu_i\))
+                \item Probabilistic routing - \(P_{ij}\)
+                \item States: \((n_1, n_2, \ldots, n_k)\)
+            \end{itemize}
     \end{itemize}
-        \begin{figure}
-        \includegraphics[width=0.65\linewidth]{images/jackson_network.jpg}
+    \begin{figure}
+        \includegraphics[width=0.55\linewidth]{images/jackson_network.png}
         \caption{A Jackson network}
     \end{figure}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Independency?}
+    \frametitle{Poisson Arrivals?}
         \begin{itemize}
+            \item $\lambda_i = r_i + \sum_j \lambda_j P_{ji}$
             \item Consider a single server network with properties:
             \begin{itemize}
                 \item Low arrival rate
@@ -142,27 +153,29 @@
             \includegraphics[width=0.65\linewidth]{images/independency_network.jpg}
         \end{figure}
         \begin{center} 
-            Incremental increments property unsatisfied
+            Violates independent increment property!
         \end{center}
 
 \end{frame}
 
+\section{Solving the Jackson Network}
+
 \begin{frame}
-    \frametitle{Solving the Jackson}
+    \frametitle{Balance Equations}
+    \begin{itemize}
+        \item Rate of jobs leaving the state = Rate of jobs entering the state.
+    \end{itemize}
     \begin{center} 
-    \linespread{1.6}
-        Rate of jobs leaving the state = Rate entering the state
-   \[
-\pi_{n_1,n_2,\ldots,n_k} \cdot \left[ \sum_{i=1}^{k} r_i + \sum_{i=1}^{k} \mu_i (1 - P_{ii})  \right] = 
-\]
+        \[\pi_{n_1,n_2,\ldots,n_k} \cdot \left[ \sum_{i=1}^{k} r_i + \sum_{i=1}^{k} \mu_i (1 - P_{ii})  \right] =\]
         \begin{equation}
-\begin{aligned}
-    \notag
-    &\underbrace{\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i - 1,\ldots,n_k} \cdot r_i}_{\text{outside arrival}}
-    + \underbrace{\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i + 1,\ldots,n_k} \cdot \mu_i P_{i,\text{out}}}_{\text{departure to outside}} \\
-    &+ \underbrace{\sum_{i=1}^{k} \sum_{j \neq i} \pi_{n_1,\ldots,n_i - 1,\ldots,n_j + 1,\ldots,n_k} \cdot \mu_j P_{ji}}_{\text{internal transition from server } j \text{ to server } i, j \neq i}.
-\end{aligned}
-\end{equation}
+            \linespread{1.6}
+            \begin{aligned}
+                \notag
+                &\underbrace{\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i - 1,\ldots,n_k} \cdot r_i}_{\text{outside arrival}}
+                + \underbrace{\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i + 1,\ldots,n_k} \cdot \mu_i P_{i,\text{out}}}_{\text{departure to outside}} \\
+                &+ \underbrace{\sum_{i=1}^{k} \sum_{j \neq i} \pi_{n_1,\ldots,n_i - 1,\ldots,n_j + 1,\ldots,n_k} \cdot \mu_j P_{ji}}_{\text{internal transition from server } j \text{ to server } i, \ j \neq i}
+            \end{aligned}
+        \end{equation}
 
         
     \end{center}
@@ -171,91 +184,50 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
+    \frametitle{Balance Equations (Contd.)}
     \begin{itemize}
-        \item Very hard to solve
-        \item Is there no better method?
+        \item In general, very hard to solve.
         \item Local Balance Approach
         \begin{itemize}
-            \item No exact algorithm
-            \item Part of setting up equations is the "art"
-            \item Break both sides of the equation into k+1 matching components and then equate
-            \item First component - Outside arrivals/departures
+            \item Break both sides of the equation into $k+1$ matching components and equate each component.
+            \item Define $A$ = Rate of leaving state due to an external arrival.
+            \item Define $A'$ = Rate of entering state due to an external departure.
+            \item Define $B_i$ = Rate of leaving state due to a depature from server $i$.
+            \item Define $B_i'$ = Rate of entering state due to an arrival at server $i$.
         \end{itemize}
     \end{itemize}
-    \begin{center} 
-    Rate leaving state due to outside arrival =
-    Rate entering state due to outside departure 
-                
-    \end{center}
-    
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-    \begin{center} 
-        A = A'
-        \[\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i,\ldots,n_k} r_i = \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i+1,\ldots,n_k} \mu_i P_{i,\text{out}}\]
-    \end{center}
-        \begin{itemize}
+    \frametitle{Balance Equations (Contd.)}
+    \begin{itemize}
+        \item Solving A = A'
+            $$\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i,\ldots,n_k} \cdot r_i = \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i+1,\ldots,n_k} \cdot \mu_i P_{i,\text{out}}$$
         \item Can we make a guess for \(\pi_{n_1,\ldots,n_k}\) such that it satisfies the above equality?
-        \item Observe that \(\pi_{n_1,\ldots,n_i,\ldots,n_k}\) term in A and the \(\pi_{n_1,\ldots,n_i+1,\ldots,n_k}\) term in A' only differ in the \(n_i\) spot
-        \item Let 
+        \item Observe that \(\pi_{n_1,\ldots,n_i,\ldots,n_k}\) term in $A$ and the \(\pi_{n_1,\ldots,n_i+1,\ldots,n_k}\) term in $A'$ only differ in $n_i$.
+        \item Let us assume that
+            $$\pi_{n_1,\ldots,n_i,\ldots,n_k} \cdot c_i = \pi_{n_1,\ldots,n_i+1,\ldots,n_k}$$
+        \item Substituting, we get
+            $$\sum_{i=1}^{k} r_i = \sum_{i=1}^{k} (c_i \cdot \mu_i) P_{i,\text{out}}$$
     \end{itemize}
-    
-    \begin{center} 
-        \(\pi_{n_1,\ldots,n_i,\ldots,n_k} \cdot c_i = \pi_{n_1,\ldots,n_i+1,\ldots,n_k}\)
-    \end{center}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-        \[
-        \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i,\ldots,n_k} r_i = \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i+1,\ldots,n_k} \mu_i P_{i,\text{out}}
-        \]
-        \[
-        \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i,\ldots,n_k} r_i = \sum_{i=1}^{k} \pi_{n_1,\ldots,n_k} \cdot c_i \cdot \mu_i P_{i,\text{out}}
-        \]
-        \[
-        \sum_{i=1}^{k} r_i = \sum_{i=1}^{k} (c_i \cdot \mu_i) P_{i,\text{out}}.
-        \]
-
-    
-\end{frame}
-\begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-    Observe that if:
-    \[c_i \cdot \mu_i = \lambda_i\]
-    Then:
-    \[\sum_{i=1}^{k} r_i = \sum_{i=1}^{k} \lambda_i P_{i,\text{out}}.\] \[c_i = \frac{\lambda_i}{\mu_i} = \rho_i\]
-    Now,
-    \[\pi_{n_1}, \ldots, \pi_{n_i}, \ldots, \pi_{n_k} \cdot \rho_i = \pi_{n_1}, \ldots, \pi_{n_i+1}, \ldots, \pi_{n_k} \quad \forall i\]
-    
+    \frametitle{Balance Equations (Contd.)}
+    \begin{itemize}
+        \item If we further assume $c_i \cdot \mu_i = \lambda_i$, we get $$\sum_{i=1}^{k} r_i = \sum_{i=1}^{k} \lambda_i P_{i,\text{out}}$$
+        \item By our assumption, $c_i = \frac{\lambda_i}{\mu_i} = \rho_i$. Substituting this we get
+            $$\pi_{n_1}, \ldots, \pi_{n_i}, \ldots, \pi_{n_k} \cdot \rho_i = \pi_{n_1}, \ldots, \pi_{n_i+1}, \ldots, \pi_{n_k}$$
+        \item Repeating the argument yields the following equation
+            $$\pi_{n_1}, \ldots, \pi_{n_k} = C \rho_{1}^{n_1} \ldots \rho_{k}^{n_k}$$
+    \end{itemize}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-    Hence, it is reasonable to assume that:
-    \[\pi_{n_1}, \ldots, \pi_{n_i}, \ldots, \pi_{n_k} = C \rho_{n_1}^{1} \ldots \rho_{n_k}^{k}\]
-    where C is the normalizing constant. Now we will solve for:
-    \[B_i = B_i'\]
-    Here, \(B_i\) is the rate of rate of transitions leaving state \((n_1, n_2, \ldots, n_k)\) due to a departure from server i. Hence,
-    \[B_i = \pi_{n1}, \ldots, \pi_{nk} \cdot \mu_i(1 - P_{ii}).\]
-\end{frame}
-
-\begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-    And \(B_i'\) is the rate of transitions entering \((n_1, n_2, \ldots, n_k)\) due to an arrival at server i. Hence,
-    \[
-        B'_i = \underbrace{\sum_{\substack{j \text{ s.t. } j \neq i}} \pi_{n_1,\ldots,n_i-1,\ldots,n_j+1,\ldots,n_k} \mu_j P_{ji}}_{\text{internal transition from server } j \text{ to server } i (j \neq i)} + \underbrace{\pi_{n_1,\ldots,n_i-1,\ldots,n_k} r_i}_{\text{outside arrival}}.
-    \]
-    Now, we will put:
-    \[\pi_{n_1}, \ldots, \pi_{n_i}, \ldots, \pi_{n_k} = C \rho_{n_1}^{1} \ldots \rho_{n_k}^{k}\]
-
-\end{frame}
-
-\begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
+    \frametitle{Balance Equations (Contd.)}
+    \begin{itemize}
+        \item We still need to check if our assumption yields a valid solution to $B_i = B_i'$
+    \end{itemize}
     \begin{align*}
         B_i &= B'_i \\
         C \rho_1^{n_1} \rho_2^{n_2} \cdots \rho_k^{n_k} \mu_i (1 - P_{ii}) &= \sum_{j \neq i} C \rho_1^{n_1} \rho_2^{n_2} \cdots \rho_k^{n_k} \left( \frac{\rho_j}{\rho_i} \right) \mu_j P_{ji} \\
@@ -268,61 +240,58 @@
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-    Lastly, we need to find the normalizing constant \( C \):
-
-    \[
-    \sum_{n_1,\ldots,n_k} \pi_{n_1,\ldots,n_k} = 1
-    \]
-    
-    \[
-    C \sum_{n_1,\ldots,n_k} \rho_1^{n_1} \cdots \rho_k^{n_k} = 1
-    \]
-    
-    \[
-    C \left( \sum_{n_1} \rho_1^{n_1} \right) \left( \sum_{n_2} \rho_2^{n_2} \right) \cdots \left( \sum_{n_k} \rho_k^{n_k} \right) = 1
-    \]
-    
-    \[
-    C \left( \frac{1}{1 - \rho_1} \right) \left( \frac{1}{1 - \rho_2} \right) \cdots \left( \frac{1}{1 - \rho_k} \right) = 1
-    \]
-    
+    \frametitle{Balance Equations (Contd.)}
+    \begin{itemize}
+        \item Lastly, we need to find the normalizing constant $C$.
+            $$\sum_{n_1,\ldots,n_k} \pi_{n_1,\ldots,n_k} = 1$$
+            $$C \sum_{n_1,\ldots,n_k} \rho_1^{n_1} \cdots \rho_k^{n_k} = 1$$
+            $$C \left( \sum_{n_1} \rho_1^{n_1} \right) \left( \sum_{n_2} \rho_2^{n_2} \right) \cdots \left( \sum_{n_k} \rho_k^{n_k} \right) = 1$$
+            $$C \left( \frac{1}{1 - \rho_1} \right) \left( \frac{1}{1 - \rho_2} \right) \cdots \left( \frac{1}{1 - \rho_k} \right) = 1$$
+            $$C = (1 - \rho_1) (1 - \rho_2) \cdots (1 - \rho_k).$$
+    \end{itemize}
+    \begin{tcolorbox}
+        \centering $\pi_{n_1,\ldots,n_k} = \rho_1^{n_1} (1 - \rho_1) \rho_2^{n_2} (1 - \rho_2) \cdots \rho_k^{n_k} (1 - \rho_k)$
+    \end{tcolorbox}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-    Hence,
-    
-    \[
-    C = (1 - \rho_1) (1 - \rho_2) \cdots (1 - \rho_k).
-    \]
-    As a result,
-    
-    \[
-    \pi_{n_1,\ldots,n_k} = \rho_1^{n_1} (1 - \rho_1) \rho_2^{n_2} (1 - \rho_2) \cdots \rho_k^{n_k} (1 - \rho_k).
-    \]
+    \frametitle{Balance Equations (Contd.)}
+    \begin{itemize}
+        \item What about the jobs at a given server?
+            \begin{align*}
+                P\{n_1 \text{ jobs at server } 1\} &= \sum_{n_2,\ldots,n_k} \pi_{n_1,\ldots,n_k} \\
+                &= \sum_{n_2,\ldots,n_k} \rho_1^{n_1} (1 - \rho_1) \rho_2^{n_2} (1 - \rho_2) \cdots \rho_k^{n_k} (1 - \rho_k) \\
+                &= \rho_1^{n_1} (1 - \rho_1)
+            \end{align*}
+        
+        \begin{tcolorbox}
+            \centering $P\{n_i \text{ jobs at server } i\} = \rho_i^{n_i} (1 - \rho_i).$
+        \end{tcolorbox}
+        \item Thus, all servers behave like M/M/1 queues in terms of their stationary queue length distributions, even though their arrival processes are not necessarily Poisson.
+    \end{itemize}
+\end{frame}
 
-    
-    Now, what about the jobs at server i?
-    For server 1:
-    \[
-    P\{n_1 \text{ jobs at server } 1\} = \sum_{n_2,\ldots,n_k} \pi_{n_1,\ldots,n_k}
-    \]
-    
+\section{Simulation}
+
+\begin{frame}
+    \frametitle{Case 1}
+    \begin{figure}
+        \includegraphics[width=0.6\linewidth]{images/case1.png}
+    \end{figure}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solving the Jackson(contd.)}
-    \[
-    = \sum_{n_2,\ldots,n_k} \rho_1^{n_1} (1 - \rho_1) \rho_2^{n_2} (1 - \rho_2) \cdots \rho_k^{n_k} (1 - \rho_k) = \rho_1^{n_1} (1 - \rho_1).
-    \]
-    
-    Likewise,
-    
-    \[
-    P\{n_i \text{ jobs at server } i\} = \rho_i^{n_i} (1 - \rho_i).
-    \]
-    Which means that all servers behave like M/M/1 queues in terms of their stationary queue length distributions even though their arrival processes are not usually Poisson.
+    \frametitle{Case 2}
+    \begin{figure}
+        \includegraphics[width=0.6\linewidth]{images/case2.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Case 3}
+    \begin{figure}
+        \includegraphics[width=0.6\linewidth]{images/case3.png}
+    \end{figure}
 \end{frame}
 
 \end{document}
