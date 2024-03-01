@@ -74,7 +74,7 @@
 \setbeamertemplate{note page}[infolines]
 
 \title{Open Queueing Networks}
-\author{Himanshu Singh \and Vikaskumar Kalsariya \and Aditya Kulkarni \and Kiran Gullapalli \and Keshava V}
+\author{Gustavo Fring \and Vikaskumar Kalsariya \and Aditya Kulkarni \and Kiran Gullapalli \and Keshava V}
 \date{\today}
 
 \begin{document}
@@ -87,16 +87,146 @@
     \tableofcontents
 \end{frame}
 
-\section{Section 1}
+\section{Queueing Networks}
 
 \begin{frame}
+    \frametitle{Queueing Networks}
     \begin{itemize}
-        \item Item 1
+        \item A queueing network is made up of servers.
+        \item Open Networks: An open queueing network has external arrivals and departures.
     \end{itemize}
+    \begin{figure}
+        \includegraphics[width=0.65\linewidth]{open_network.jpg}
+        \caption{An open queueing network}
+    \end{figure}
 \end{frame}
 
-\note{
-    Note 1
-}
+% \note{
+%     Note 1
+% }
+
+\section{Jackson Network}
+
+\begin{frame}
+    \frametitle{Jackson Network}
+    \begin{itemize}
+        \item General form of queueing network
+        \begin{itemize}
+            \item Unbounded queues
+            \item FCFS (First Come First Serve) service
+            \item Arrivals from outside network \(\sim\) Poisson(\(r_i\))
+            \item Service rates \(\sim\) exp(\(\mu_i\))
+            \item Probabilistic routing - \(P_{ij}\)
+            \item States: \((n_1, n_2, \ldots, n_k)\)
+            $$ \lambda_i = r_i + \sum_j \lambda_j P_{ji} \quad \text{.} $$
+        
+        \end{itemize}
+    \end{itemize}
+        \begin{figure}
+        \includegraphics[width=0.65\linewidth]{jackson_network.jpg}
+        \caption{A Jackson network}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Independency?}
+        \begin{itemize}
+            \item Consider a single server network with properties:
+            \begin{itemize}
+                \item Low arrival rate
+                \item High service rate
+                \item High \(P_{ii}\)
+            \end{itemize}
+        \end{itemize}
+        \begin{figure}
+            \includegraphics[width=0.65\linewidth]{independency_network.jpg}
+        \end{figure}
+        \begin{center} 
+            Incremental increments property unsatisfied
+        \end{center}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Solving the Jackson}
+    \begin{center} 
+    \linespread{1.6}
+        Rate of jobs leaving the state = Rate entering the state
+   \[
+\pi_{n_1,n_2,\ldots,n_k} \cdot \left[ \sum_{i=1}^{k} r_i + \sum_{i=1}^{k} \mu_i (1 - P_{ii})  \right] = 
+\]
+        \begin{equation}
+\begin{aligned}
+    \notag
+    &\underbrace{\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i - 1,\ldots,n_k} \cdot r_i}_{\text{outside arrival}}
+    + \underbrace{\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i + 1,\ldots,n_k} \cdot \mu_i P_{i,\text{out}}}_{\text{departure to outside}} \\
+    &+ \underbrace{\sum_{i=1}^{k} \sum_{j \neq i} \pi_{n_1,\ldots,n_i - 1,\ldots,n_j + 1,\ldots,n_k} \cdot \mu_j P_{ji}}_{\text{internal transition from server } j \text{ to server } i, j \neq i}.
+\end{aligned}
+\end{equation}
+
+        
+    \end{center}
+    
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Solving the Jackson(contd.)}
+    \begin{itemize}
+        \item Very hard to solve
+        \item Is there no better method?
+        \item Local Balance Approach
+        \begin{itemize}
+            \item No exact algorithm
+            \item Part of setting up equations is the "art"
+            \item Break both sides of the equation into k+1 matching components and then equate
+            \item First component - Outside arrivals/departures
+        \end{itemize}
+    \end{itemize}
+    \begin{center} 
+    Rate leaving state due to outside arrival =
+    Rate entering state due to outside departure 
+                
+    \end{center}
+    
+\end{frame}
+
+\begin{frame}
+    \frametitle{Solving the Jackson(contd.)}
+    \begin{center} 
+        A = A'
+        \[\sum_{i=1}^{k} \pi_{n_1,\ldots,n_i,\ldots,n_k} r_i = \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i+1,\ldots,n_k} \mu_i P_{i,\text{out}}\]
+    \end{center}
+        \begin{itemize}
+        \item Can we make a guess for \(\pi_{n_1,\ldots,n_k}\) such that it satisfies the above equality?
+        \item Observe that \(\pi_{n_1,\ldots,n_i,\ldots,n_k}\) term in A and the \(\pi_{n_1,\ldots,n_i+1,\ldots,n_k}\) term in A' only differ in the \(n_i\) spot
+        \item Let 
+    \end{itemize}
+    
+    \begin{center} 
+        \(\pi_{n_1,\ldots,n_i,\ldots,n_k} \cdot c_i = \pi_{n_1,\ldots,n_i+1,\ldots,n_k}\)
+    \end{center}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Solving the Jackson(contd.)}
+    \begin{center} 
+        \[
+        \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i,\ldots,n_k} r_i = \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i+1,\ldots,n_k} \mu_i P_{i,\text{out}}
+        \]
+        \[
+        \sum_{i=1}^{k} \pi_{n_1,\ldots,n_i,\ldots,n_k} r_i = \sum_{i=1}^{k} \pi_{n_1,\ldots,n_k} \cdot c_i \cdot \mu_i P_{i,\text{out}}
+        \]
+        \[
+        \sum_{i=1}^{k} r_i = \sum_{i=1}^{k} (c_i \cdot \mu_i) P_{i,\text{out}}.
+        \]
+    \end{center}
+    Observe that if:
+    \begin{center} 
+
+    \end{center}
+    
+\end{frame}
+
 
 \end{document}
