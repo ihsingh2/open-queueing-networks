@@ -1,7 +1,7 @@
 from network import Network, Job
 
 R = [0.5, 0]
-S = [3, 4]
+S = [3, 3]
 P = [
     [0.1, 0.9],
     [0, 0.2],
