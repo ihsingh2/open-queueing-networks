@@ -5,6 +5,40 @@ Module for simulation of open queueing networks.
 import logging
 import numpy as np
 
+class Job:
+    """
+    Tracks the number of visits of a job to a server, and the total time spent in the network.
+    """
+
+    NUM_JOBS = 0
+    NUM_VISITS = 0
+    TIME_SPENT = 0
+
+    def __init__(self):
+        """
+        Initializes a new job.
+        """
+
+        self.num_visits = 0
+        self.time_spent = 0
+
+    def update(self, time):
+        """
+        Records the time spent in a new visit to a server.
+        """
+
+        self.num_visits += 1
+        self.time_spent += time
+
+    def leave(self):
+        """
+        Called when the job leaves the network.
+        """
+
+        Job.NUM_JOBS += 1
+        Job.NUM_VISITS += self.num_visits
+        Job.TIME_SPENT += self.time_spent
+
 class Server:
     """
     A server consists of a queue, with arrivals, and communication channels to other servers.
@@ -22,6 +56,7 @@ class Server:
         self.queue = []
         self.timestamp = 0
         self.is_busy = False
+        self.current_job = None
         self.service_remaining = 0
         self.next_arrival = np.random.exponential(1 / self.external_arrival_rate)
 
@@ -40,7 +75,6 @@ class Server:
         self.routing_probabilities = routing_probabilities
         self.self_loop_probability = self_loop_probability
         self.out_probability = 1 - sum(self.routing_probabilities) - self.self_loop_probability
-        # print(self.routing_probabilities, self.self_loop_probability, self.out_probability)
 
     def num_jobs(self):
         """
@@ -70,7 +104,7 @@ class Server:
             self.next_arrival -= time_delta
         else:
             logging.debug('%.2f %d: Queued an external arrival', self.timestamp, self.name)
-            self.queue.append(0)
+            self.queue.append(Job())
             self.next_arrival = np.random.exponential(1 / self.external_arrival_rate)
 
     def service_current_job(self, time_delta):
@@ -97,15 +131,19 @@ class Server:
             cdf_i += prob
             if cdf <= cdf_i:
                 logging.debug('%.2f %d: Routed job to server %d', self.timestamp, self.name, i)
-                self.channels[i].queue.append(0)
+                self.channels[i].queue.append(self.current_job)
+                self.current_job = None
                 return
 
         cdf_i += self.self_loop_probability
         if cdf <= cdf_i:
             logging.debug('%.2f %d: Routed job to self', self.timestamp, self.name)
-            self.queue.append(0)
+            self.queue.append(self.current_job)
+            self.current_job = None
             return
 
+        self.current_job.leave()
+        self.current_job = None
         logging.debug('%.2f %d: Job left the system', self.timestamp, self.name)
 
     def draw_job(self):
@@ -115,9 +153,10 @@ class Server:
 
         if self.queue:
             logging.debug('%.2f %d: Started servicing a job', self.timestamp, self.name)
-            self.queue.pop(0)
-            self.service_remaining = np.random.exponential(1 / self.service_rate)
             self.is_busy = True
+            self.current_job = self.queue.pop(0)
+            self.service_remaining = np.random.exponential(1 / self.service_rate)
+            self.current_job.update(self.service_remaining)
 
 class Network:
     """
@@ -135,6 +174,8 @@ class Network:
         self.service_rates = service_rates
         self.routing_matrix = routing_matrix
         self.servers = []
+        self.num_samples = 0
+        self.num_jobs = [0 for i, _ in enumerate(self.routing_matrix)]
 
         for i, _ in enumerate(self.routing_matrix):
             server = Server(i, arrival_rates[i], service_rates[i])
@@ -153,28 +194,18 @@ class Network:
         """
         for i in arrival_rates:
             if i <= 0:
-                raise ValueError('Arrival rate should be positive.')
+                raise ValueError('Arrival rates should be positive.')
         for i in service_rates:
             if i <= 0:
-                raise ValueError('Service rate should be positive.')
+                raise ValueError('Service rates should be positive.')
         for row in routing_matrix:
             cdf = 0
             for col in row:
                 if col < 0 or col > 1:
-                    raise ValueError('Routing probability should be between 0 and 1.')
+                    raise ValueError('Routing probabilities should be between 0 and 1.')
                 cdf += col
             if cdf > 1:
-                raise ValueError('Sum of routing probabilities in a row should be less than 1.')
-
-    def num_jobs(self):
-        """
-        Returns the total number of jobs in the network.
-        """
-
-        num = 0
-        for server in self.servers:
-            num += server.num_jobs()
-        return num
+                raise ValueError('Sum of routing probabilities in a row should not exceed 1.')
 
     def simulate(self, num_seconds, time_delta):
         """
@@ -189,6 +220,16 @@ class Network:
             #    print(server.num_jobs(), end=' ')
             #print()
             time += time_delta
+            self.log()
+
+    def log(self):
+        """
+        Logs the number of jobs in each server.
+        """
+
+        self.num_samples += 1
+        for i, _ in enumerate(self.num_jobs):
+            self.num_jobs[i] += self.servers[i].num_jobs()
 
 logging.basicConfig(format='%(message)s', level=logging.DEBUG)
 
@@ -203,3 +244,12 @@ P = [
 
 N = Network(R, S, P)
 N.simulate(500, 0.5)
+
+print(f'NUM_JOBS = {Job.NUM_JOBS}')
+print(f'SUM[NUM_VISITS] = {Job.NUM_VISITS}')
+print(f'SUM[TIME_SPENT] = {Job.TIME_SPENT :.2f}')
+print(f'E[NUM_VISITS] = {Job.NUM_VISITS / Job.NUM_JOBS :.2f}')
+print(f'E[TIME_SPENT] = {Job.TIME_SPENT / Job.NUM_JOBS :.2f}')
+
+for id, jobs in enumerate(N.num_jobs):
+    print(f'E[N_{id}] = {jobs / N.num_samples :.2f}')
