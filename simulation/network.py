@@ -40,6 +40,13 @@ class Job:
         self.num_visits[server] += 1
         self.time_spent[server] += time
 
+    def wait(self, server, time):
+        """
+        Records the variable waiting time in a server.
+        """
+
+        self.time_spent[server] += time
+
     def leave(self):
         """
         Called when the job leaves the network.
@@ -108,6 +115,7 @@ class Server:
         """
 
         self.timestamp += time_delta
+        self.wait_queued_jobs(time_delta)
         self.check_external_arrivals(time_delta)
         self.service_current_job(time_delta)
         if not self.is_busy:
@@ -117,12 +125,21 @@ class Server:
         """
         Checks if the exponential timer for external arrival is up.
         """
+
         if self.next_arrival > time_delta:
             self.next_arrival -= time_delta
         else:
             logging.debug('%.3f %d: Queued an external arrival', self.timestamp, self.name + 1)
             self.queue.append(Job())
             self.next_arrival = np.random.exponential(1 / self.external_arrival_rate)
+
+    def wait_queued_jobs(self, time_delta):
+        """
+        Adds waiting time to all queued jobs.
+        """
+
+        for job in self.queue:
+            job.wait(self.name, time_delta)
 
     def service_current_job(self, time_delta):
         """
@@ -251,9 +268,9 @@ class Network:
         while time < num_seconds:
             for server in self.servers:
                 server.run(time_delta)
-            for server in self.servers:
-                print(server.num_jobs(), end=' ')
-            print()
+            #for server in self.servers:
+            #    print(server.num_jobs(), end=' ')
+            #print()
             time += time_delta
             self.log_stats(time)
 
@@ -303,7 +320,7 @@ class Network:
         """
         Plots the collected statistics.
         """
-        
+
         print('Loading plots...')
         plt.figure(figsize=(10, 8))
         rows = len(self.routing_matrix) * 100
@@ -331,6 +348,10 @@ class Network:
         plt.show()
 
     def print_stats(self):
+        """
+        Prints the collected statistics.
+        """
+
         print('_' * 35)
         print(f'NUM_JOBS = {Job.NUM_JOBS}')
         for i, _ in enumerate(self.routing_matrix):
