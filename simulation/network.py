@@ -197,7 +197,7 @@ class Network:
     A network encapsulates all the servers, and provides a framework for synchronous simulation.
     """
 
-    def __init__(self, arrival_rates, service_rates, routing_matrix):
+    def __init__(self, arrival_rates, service_rates, routing_matrix, sampling_frequency):
         """
         Initializes the network for simulation.
         """
@@ -207,6 +207,9 @@ class Network:
         self.arrival_rates = arrival_rates
         self.service_rates = service_rates
         self.routing_matrix = routing_matrix
+        self.sample_threshold = max(round(1 / sampling_frequency, 0), 1)
+        self.sample_counter = 0
+
         self.servers = []
         self.stats = {
             'num_samples': 0,
@@ -272,7 +275,10 @@ class Network:
             #    print(server.num_jobs(), end=' ')
             #print()
             time += time_delta
-            self.log_stats(time)
+            self.sample_counter += 1
+            if self.sample_counter == self.sample_threshold:
+                self.log_stats(time)
+                self.sample_counter = 0
 
     def log_stats(self, current_time):
         """

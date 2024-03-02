@@ -7,7 +7,7 @@ P = [
     [0, 0.2],
 ]
 
-N = Network(R, S, P)
+N = Network(R, S, P, 0.01)
 N.simulate(15000, 0.001)
 
 N.print_stats()
