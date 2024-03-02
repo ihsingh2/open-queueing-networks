@@ -4,6 +4,7 @@ Module for simulation of open queueing networks.
 
 import logging
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Job:
     """
@@ -11,24 +12,33 @@ class Job:
     """
 
     NUM_JOBS = 0
-    NUM_VISITS = 0
-    TIME_SPENT = 0
+    NUM_VISITS = []
+    TIME_SPENT = []
+
+    @classmethod
+    def __init_class__(cls, num_servers):
+        """
+        Initializes the class variables used for logging.
+        """
+        for _ in range(num_servers):
+            Job.NUM_VISITS.append(0)
+            Job.TIME_SPENT.append(0.0)
 
     def __init__(self):
         """
         Initializes a new job.
         """
 
-        self.num_visits = 0
-        self.time_spent = 0
+        self.num_visits = [ 0 for _, _ in enumerate(Job.NUM_VISITS) ]
+        self.time_spent = [ 0.0 for _, _ in enumerate(Job.TIME_SPENT) ]
 
-    def update(self, time):
+    def update(self, server, time):
         """
         Records the time spent in a new visit to a server.
         """
 
-        self.num_visits += 1
-        self.time_spent += time
+        self.num_visits[server] += 1
+        self.time_spent[server] += time
 
     def leave(self):
         """
@@ -36,8 +46,9 @@ class Job:
         """
 
         Job.NUM_JOBS += 1
-        Job.NUM_VISITS += self.num_visits
-        Job.TIME_SPENT += self.time_spent
+        for i, _ in enumerate(Job.NUM_VISITS):
+            Job.NUM_VISITS[i] += self.num_visits[i]
+            Job.TIME_SPENT[i] += self.time_spent[i]
 
 class Server:
     """
@@ -109,7 +120,7 @@ class Server:
         if self.next_arrival > time_delta:
             self.next_arrival -= time_delta
         else:
-            logging.debug('%.2f %d: Queued an external arrival', self.timestamp, self.name)
+            logging.debug('%.3f %d: Queued an external arrival', self.timestamp, self.name)
             self.queue.append(Job())
             self.next_arrival = np.random.exponential(1 / self.external_arrival_rate)
 
@@ -122,7 +133,7 @@ class Server:
             if self.service_remaining > time_delta:
                 self.service_remaining -= time_delta
             else:
-                logging.debug('%.2f %d: Serviced a job', self.timestamp, self.name)
+                logging.debug('%.3f %d: Serviced a job', self.timestamp, self.name)
                 self.service_remaining = 0
                 self.is_busy = False
                 self.route_job()
@@ -136,21 +147,21 @@ class Server:
         for i, prob in enumerate(self.routing_probabilities):
             cdf_i += prob
             if cdf <= cdf_i:
-                logging.debug('%.2f %d: Routed job to server %d', self.timestamp, self.name, i)
+                logging.debug('%.3f %d: Routed job to server %d', self.timestamp, self.name, i)
                 self.channels[i].queue.append(self.current_job)
                 self.current_job = None
                 return
 
         cdf_i += self.self_loop_probability
         if cdf <= cdf_i:
-            logging.debug('%.2f %d: Routed job to self', self.timestamp, self.name)
+            logging.debug('%.3f %d: Routed job to self', self.timestamp, self.name)
             self.queue.append(self.current_job)
             self.current_job = None
             return
 
         self.current_job.leave()
         self.current_job = None
-        logging.debug('%.2f %d: Job left the system', self.timestamp, self.name)
+        logging.debug('%.3f %d: Job left the system', self.timestamp, self.name)
 
     def draw_job(self):
         """
@@ -158,11 +169,11 @@ class Server:
         """
 
         if self.queue:
-            logging.debug('%.2f %d: Started servicing a job', self.timestamp, self.name)
+            logging.debug('%.3f %d: Started servicing a job', self.timestamp, self.name)
             self.is_busy = True
             self.current_job = self.queue.pop(0)
             self.service_remaining = np.random.exponential(1 / self.service_rate)
-            self.current_job.update(self.service_remaining)
+            self.current_job.update(self.name, self.service_remaining)
 
 class Network:
     """
@@ -171,7 +182,7 @@ class Network:
 
     def __init__(self, arrival_rates, service_rates, routing_matrix):
         """
-        Initializes all the servers of the network.
+        Initializes the network for simulation.
         """
 
         self.validate_input(arrival_rates, service_rates, routing_matrix)
@@ -180,11 +191,23 @@ class Network:
         self.service_rates = service_rates
         self.routing_matrix = routing_matrix
         self.servers = []
-        self.num_samples = 0
-        self.num_jobs = [0 for i, _ in enumerate(self.routing_matrix)]
+        self.stats = {
+            'num_samples': 0,
+            'timestamps': [],
+            'num_jobs_sum': [[] for i, _ in enumerate(self.routing_matrix)],
+            'num_jobs_avg': [[] for i, _ in enumerate(self.routing_matrix)],
+            'num_visits_avg': [[] for i, _ in enumerate(self.routing_matrix)],
+            'time_spent_avg': [[] for i, _ in enumerate(self.routing_matrix)]
+        }
 
+        self.init_servers()
+
+    def init_servers(self):
+        """
+        Initializes all the servers of the network.
+        """
         for i, _ in enumerate(self.routing_matrix):
-            server = Server(i, arrival_rates[i], service_rates[i])
+            server = Server(i, self.arrival_rates[i], self.service_rates[i])
             self.servers.append(server)
 
         for i, _ in enumerate(self.routing_matrix):
@@ -193,6 +216,8 @@ class Network:
                 self.routing_matrix[i][:i] + self.routing_matrix[i][i + 1:],
                 self.routing_matrix[i][i]
             )
+
+        Job.__init_class__(len(self.routing_matrix))
 
     def validate_input(self, arrival_rates, service_rates, routing_matrix):
         """
@@ -226,15 +251,90 @@ class Network:
             #    print(server.num_jobs(), end=' ')
             #print()
             time += time_delta
-            self.log()
+            self.log_stats(time)
 
-    def log(self):
+    def log_stats(self, current_time):
         """
-        Logs the number of jobs in each server.
+        Logs the current statistics of the system.
         """
 
-        self.num_samples += 1
-        for i, _ in enumerate(self.num_jobs):
-            self.num_jobs[i] += self.servers[i].num_jobs()
+        self.stats['num_samples'] += 1
+        self.stats['timestamps'].append(current_time)
+
+        if self.stats['num_samples'] > 1:
+            for i, _ in enumerate(self.routing_matrix):
+                self.stats['num_jobs_sum'][i].append(
+                    self.stats['num_jobs_sum'][i][-1] + self.servers[i].num_jobs()
+                )
+                self.stats['num_jobs_avg'][i].append(
+                    self.stats['num_jobs_sum'][i][-1] / self.stats['num_samples']
+                )
+        else:
+            for i, _ in enumerate(self.routing_matrix):
+                self.stats['num_jobs_sum'][i].append(
+                    self.servers[i].num_jobs()
+                )
+                self.stats['num_jobs_avg'][i].append(
+                    self.stats['num_jobs_sum'][i][-1]
+                )
+
+        if Job.NUM_JOBS > 0:
+            for i, _ in enumerate(self.routing_matrix):
+                self.stats['num_visits_avg'][i].append(
+                    Job.NUM_VISITS[i] / Job.NUM_JOBS
+                )
+                self.stats['time_spent_avg'][i].append(
+                    Job.TIME_SPENT[i] / Job.NUM_JOBS
+                )
+        else:
+            for i, _ in enumerate(self.routing_matrix):
+                self.stats['num_visits_avg'][i].append(
+                    0
+                )
+                self.stats['time_spent_avg'][i].append(
+                    0.0
+                )
+
+    def plot_stats(self):
+        """
+        Plots the collected statistics.
+        """
+        
+        print('Loading plots...')
+        plt.figure(figsize=(10, 8))
+        rows = len(self.routing_matrix) * 100
+
+        for i, _ in enumerate(self.routing_matrix):
+            plt.subplot(rows + 31 + 3*i)
+            plt.plot(self.stats['timestamps'], self.stats['num_jobs_avg'][i])
+            plt.title('Average number of jobs in server ' + str(i+1))
+            plt.xlabel('Time')
+            plt.ylabel('Number of jobs')
+
+            plt.subplot(rows + 32 + 3*i)
+            plt.plot(self.stats['timestamps'], self.stats['time_spent_avg'][i])
+            plt.title('Average time spent in server ' + str(i+1))
+            plt.xlabel('Time')
+            plt.ylabel('Time spent per job')
+
+            plt.subplot(rows + 33 + 3*i)
+            plt.plot(self.stats['timestamps'], self.stats['num_visits_avg'][i])
+            plt.title('Average number of visits to server ' + str(i+1))
+            plt.xlabel('Time')
+            plt.ylabel('Visits per job')
+
+        plt.tight_layout()
+        plt.show()
+
+    def print_stats(self):
+        print('_' * 35)
+        print(f'NUM_JOBS = {Job.NUM_JOBS}')
+        for i, _ in enumerate(self.routing_matrix):
+            print()
+            print(f"E[N_{i}] = {self.stats['num_jobs_avg'][i][-1] :.2f}")
+            print(f"E[T_{i}] = {self.stats['time_spent_avg'][i][-1] :.2f}")
+            print(f"E[V_{i}] = {self.stats['num_visits_avg'][i][-1] :.2f}")
+        print('_' * 35)
 
 logging.basicConfig(format='%(message)s', level=logging.DEBUG)
+logging.getLogger('matplotlib.font_manager').disabled = True
