@@ -120,7 +120,7 @@ class Server:
         if self.next_arrival > time_delta:
             self.next_arrival -= time_delta
         else:
-            logging.debug('%.3f %d: Queued an external arrival', self.timestamp, self.name)
+            logging.debug('%.3f %d: Queued an external arrival', self.timestamp, self.name + 1)
             self.queue.append(Job())
             self.next_arrival = np.random.exponential(1 / self.external_arrival_rate)
 
@@ -133,7 +133,7 @@ class Server:
             if self.service_remaining > time_delta:
                 self.service_remaining -= time_delta
             else:
-                logging.debug('%.3f %d: Serviced a job', self.timestamp, self.name)
+                logging.debug('%.3f %d: Serviced a job', self.timestamp, self.name + 1)
                 self.service_remaining = 0
                 self.is_busy = False
                 self.route_job()
@@ -147,21 +147,21 @@ class Server:
         for i, prob in enumerate(self.routing_probabilities):
             cdf_i += prob
             if cdf <= cdf_i:
-                logging.debug('%.3f %d: Routed job to server %d', self.timestamp, self.name, i)
+                logging.debug('%.3f %d: Routed job to neighbour %d', self.timestamp, self.name + 1, i + 1)
                 self.channels[i].queue.append(self.current_job)
                 self.current_job = None
                 return
 
         cdf_i += self.self_loop_probability
         if cdf <= cdf_i:
-            logging.debug('%.3f %d: Routed job to self', self.timestamp, self.name)
+            logging.debug('%.3f %d: Routed job to self', self.timestamp, self.name + 1)
             self.queue.append(self.current_job)
             self.current_job = None
             return
 
         self.current_job.leave()
         self.current_job = None
-        logging.debug('%.3f %d: Job left the system', self.timestamp, self.name)
+        logging.debug('%.3f %d: Job left the system', self.timestamp, self.name + 1)
 
     def draw_job(self):
         """
@@ -169,7 +169,7 @@ class Server:
         """
 
         if self.queue:
-            logging.debug('%.3f %d: Started servicing a job', self.timestamp, self.name)
+            logging.debug('%.3f %d: Started servicing a job', self.timestamp, self.name + 1)
             self.is_busy = True
             self.current_job = self.queue.pop(0)
             self.service_remaining = np.random.exponential(1 / self.service_rate)
@@ -251,9 +251,9 @@ class Network:
         while time < num_seconds:
             for server in self.servers:
                 server.run(time_delta)
-            #for server in self.servers:
-            #    print(server.num_jobs(), end=' ')
-            #print()
+            for server in self.servers:
+                print(server.num_jobs(), end=' ')
+            print()
             time += time_delta
             self.log_stats(time)
 
