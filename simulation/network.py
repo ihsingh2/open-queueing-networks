@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class Job:
     """
-    Tracks the number of visits of a job to a server, and the total time spent in the network.
+    Tracks the number of visits and the time spent by a job in a server.
     """
 
     NUM_JOBS = 0
@@ -223,6 +223,10 @@ class Network:
         """
         Checks if rates are positive and routing matrix is a valid transition matrix.
         """
+        if len(arrival_rates) < 1:
+            raise ValueError('Number of servers should be positive')
+        if len(arrival_rates) != len(service_rates) or len(service_rates) != len(routing_matrix) or len(routing_matrix) != len(routing_matrix[0]):
+            raise ValueError('Number of servers is not consistent.')
         for i in arrival_rates:
             if i < 0:
                 raise ValueError('Arrival rates should be non-negative.')
@@ -307,19 +311,19 @@ class Network:
         for i, _ in enumerate(self.routing_matrix):
             plt.subplot(rows + 31 + 3*i)
             plt.plot(self.stats['timestamps'], self.stats['num_jobs_avg'][i])
-            plt.title('Average number of jobs in server ' + str(i+1))
+            plt.title(f'Average number of jobs in server {i + 1}')
             plt.xlabel('Time')
             plt.ylabel('Number of jobs')
 
             plt.subplot(rows + 32 + 3*i)
             plt.plot(self.stats['timestamps'], self.stats['time_spent_avg'][i])
-            plt.title('Average time spent in server ' + str(i+1))
+            plt.title(f'Average time spent in server {i + 1}')
             plt.xlabel('Time')
             plt.ylabel('Time spent per job')
 
             plt.subplot(rows + 33 + 3*i)
             plt.plot(self.stats['timestamps'], self.stats['num_visits_avg'][i])
-            plt.title('Average number of visits to server ' + str(i+1))
+            plt.title(f'Average number of visits to server {i + 1}')
             plt.xlabel('Time')
             plt.ylabel('Visits per job')
 
@@ -331,9 +335,9 @@ class Network:
         print(f'NUM_JOBS = {Job.NUM_JOBS}')
         for i, _ in enumerate(self.routing_matrix):
             print()
-            print(f"E[N_{i}] = {self.stats['num_jobs_avg'][i][-1] :.2f}")
-            print(f"E[T_{i}] = {self.stats['time_spent_avg'][i][-1] :.2f}")
-            print(f"E[V_{i}] = {self.stats['num_visits_avg'][i][-1] :.2f}")
+            print(f"E[N_{i + 1}] = {self.stats['num_jobs_avg'][i][-1] :.2f}")
+            print(f"E[T_{i + 1}] = {self.stats['time_spent_avg'][i][-1] :.2f}")
+            print(f"E[V_{i + 1}] = {self.stats['num_visits_avg'][i][-1] :.2f}")
         print('_' * 35)
 
 logging.basicConfig(format='%(message)s', level=logging.DEBUG)
