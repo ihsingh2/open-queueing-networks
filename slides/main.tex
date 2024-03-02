@@ -4,6 +4,9 @@
 \usepackage{biblatex}
 \bibliography{references.bib}
 
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows.meta,bending}
+
 \usecolortheme{whale}
 \useinnertheme{rounded}
 \useoutertheme{infolines}
@@ -343,7 +346,19 @@
 \begin{frame}
     \frametitle{Case 3}
     \begin{figure}
-        \includegraphics[width=0.6\linewidth]{images/case3.jpg}
+        \begin{tikzpicture}[auto, node distance=2cm,>=Latex]
+            \tikzstyle{node}=[circle, draw, thick, minimum size=2em]
+            \tikzstyle{label}=[text width=1cm, text centered]
+            \node[node] (A) {A};
+            \node[node] (B) [below of=A] {B};
+            \node[node] (C) [right of=A, xshift=2cm] {C};
+            \draw[->] (A) -- node[above] {$\mu = 30$} (C);
+            \draw[->] (B) -- node[below, sloped] {$\mu = 50$} (C);
+            \draw[<-] (A) -- node[above] {$\gamma_A = 20$} ++(-2,0);
+            \draw[<-] (B) -- node[above] {$\gamma_B = 10$} ++(-2,0);
+            \draw[->] (C) -- node[above] {0.9} ++(2,0);
+            \draw[->] (C) to [bend left=45] node[below, sloped] {0.1} (B);
+        \end{tikzpicture}
     \end{figure}
 \end{frame}
 
